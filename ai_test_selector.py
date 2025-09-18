@@ -47,9 +47,7 @@ def select_tests_hybrid(tests_dir="tests", change_count=2, bonus=0.2):
 
         # Eğer en güncel dosya buysa bonus ekle
         if most_recent and test.endswith(os.path.basename(most_recent)):
-            proba += bonus
-            if proba > 1.0:
-                proba = 1.0
+            proba = min(proba + bonus, 1.0)
 
         ai_scored.append((test, proba))
 
@@ -68,11 +66,14 @@ if __name__ == "__main__":
     for i, (test, score) in enumerate(tests_with_scores, 1):
         print(f"{i}) {test} (score={score:.2f})")
 
-    for test_file, _ in tests_with_scores:
-        #subprocess.run([sys.executable, "-m", "pytest", "-q", test_file])
-    report_name = f"reports/results_{idx}.xml"
-         subprocess.run([
-           sys.executable, "-m", "pytest", "-q",
-           f"--junitxml={report_name}",
-           test_file
-          ])
+    # rapor klasörü oluştur
+    os.makedirs("reports", exist_ok=True)
+
+    # seçilen testleri çalıştır ve raporları üret
+    for idx, (test_file, _) in enumerate(tests_with_scores, 1):
+        report_name = f"reports/results_{idx}.xml"
+        subprocess.run([
+            sys.executable, "-m", "pytest", "-q",
+            f"--junitxml={report_name}",
+            test_file
+        ])
