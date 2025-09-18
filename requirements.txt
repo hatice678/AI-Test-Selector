@@ -1,3 +1,4 @@
 pytest
+pytest-html
 scikit-learn
 numpy
