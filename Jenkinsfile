@@ -9,7 +9,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Git repo'yu çek
-                git branch: 'main', url: 'https://github.com/KULLANICI/AI-Test-Selector.git'
+                git branch: 'main', url: 'https://github.com/hatice678/AI-Test-Selector.git'
             }
         }
 
