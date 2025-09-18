@@ -69,4 +69,10 @@ if __name__ == "__main__":
         print(f"{i}) {test} (score={score:.2f})")
 
     for test_file, _ in tests_with_scores:
-        subprocess.run([sys.executable, "-m", "pytest", "-q", test_file])
+        #subprocess.run([sys.executable, "-m", "pytest", "-q", test_file])
+    report_name = f"reports/results_{idx}.xml"
+         subprocess.run([
+           sys.executable, "-m", "pytest", "-q",
+           f"--junitxml={report_name}",
+           test_file
+          ])
