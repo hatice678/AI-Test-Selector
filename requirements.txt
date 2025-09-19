@@ -1,4 +1,5 @@
-pytest
-pytest-html
+pandas
 scikit-learn
 numpy
+pytest
+pytest-html
