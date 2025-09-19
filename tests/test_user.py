@@ -14,4 +14,4 @@ def test_create_user_invalid():
         create_user("")
 
 def test_user_force_fail():
-    assert False  # ❌ kasıtlı fail
+    assert False  # ❌ kasıtlı fail2333
