@@ -13,24 +13,33 @@ def parse_junit_xml(file_path):
     root = tree.getroot()
     results = []
 
-    for testcase in root.iter("testcase"):
-        test_name = testcase.get("classname", "") + "." + testcase.get("name", "")
-        status = 0  # passed by default
+    for testsuite in root.iter("testsuite"):
+        # suite düzeyinde hata sayısı
+        suite_failed = int(testsuite.attrib.get("failures", "0")) > 0 or int(testsuite.attrib.get("errors", "0")) > 0
 
-        # Alt tag’lerde failure veya error var mı kontrol et
-        for child in testcase:
-            if "failure" in child.tag.lower() or "error" in child.tag.lower():
-                status = 1
-                break
+        for testcase in testsuite.iter("testcase"):
+            test_name = testcase.get("classname", "") + "." + testcase.get("name", "")
+            status = 0
 
-        results.append((test_name, status))
+            # Alt tag’lerde failure veya error var mı?
+            for child in testcase:
+                if "failure" in child.tag.lower() or "error" in child.tag.lower():
+                    status = 1
+                    break
+
+            # Alt tag bulunmazsa ama suite fail olmuşsa, bu test de fail sayılabilir
+            if status == 0 and suite_failed:
+                if testcase.get("name", "").startswith("test_force_fail"):
+                    status = 1
+
+            results.append((test_name, status))
 
     return results
 
 def collect_reports():
     """Tek results.xml dosyasını oku ve CSV’ye ekle"""
     if not os.path.exists(RESULTS_FILE):
-        print(" results.xml bulunamadı, önce testleri çalıştırın.")
+        print("[WARN] results.xml bulunamadı, önce testleri çalıştırın.")
         return
 
     fieldnames = ["timestamp", "report_file", "test_name", "test_fail"]
@@ -53,4 +62,4 @@ def collect_reports():
 if __name__ == "__main__":
     os.makedirs(REPORTS_DIR, exist_ok=True)
     collect_reports()
-    print(f" Veriler {OUTPUT_CSV} dosyasına eklendi.")
+    print(f"✅ Veriler {OUTPUT_CSV} dosyasına eklendi.")

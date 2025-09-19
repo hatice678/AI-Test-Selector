@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="7" time="0.091" timestamp="2025-09-19T14:16:12.747203+03:00" hostname="LAPTOP-80ILNOEE"><testcase classname="tests.test_payment" name="test_payment_valid" time="0.001" /><testcase classname="tests.test_payment" name="test_payment_invalid" time="0.001" /><testcase classname="tests.test_recommender" name="test_recommend_with_id" time="0.000" /><testcase classname="tests.test_recommender" name="test_recommend_without_id" time="0.000" /><testcase classname="tests.test_user" name="test_create_user_valid" time="0.000" /><testcase classname="tests.test_user" name="test_create_user_invalid" time="0.000" /><testcase classname="tests.test_user" name="test_force_fail" time="0.001"><failure message="assert False">def test_force_fail():
+&gt;       assert False
+E       assert False
+
+tests\test_user.py:17: AssertionError</failure></testcase></testsuite></testsuites>
