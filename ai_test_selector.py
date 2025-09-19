@@ -12,14 +12,25 @@ REPORTS_DIR = "reports"
 def load_training_data(csv_file=CSV_FILE):
     """CSV’den training datasını oku"""
     X, y, test_names = [], [], []
-    if not os.path.exists(csv_file):
-        print("⚠️ Training datası bulunamadı, önce collect_data.py çalıştırın.")
-        return None, None, None
 
+    # Eğer training_data.csv yoksa → dummy mod
+    if not os.path.exists(CSV_FILE):
+        print("⚠️ Training datası yok, dummy modda çalıştırılıyor...")
+        os.makedirs(REPORTS_DIR, exist_ok=True)
+        for idx, test_file in enumerate(Path("tests").glob("test_*.py"), 1):
+            report_file = f"{REPORTS_DIR}/results_{idx}.xml"
+            subprocess.run([
+                sys.executable, "-m", "pytest", "-q",
+                f"--junitxml={report_file}",
+                str(test_file)
+            ])
+        # Dummy mod → raporlar üretildi, çıkış yap
+        sys.exit(0)
+
+    # CSV varsa → gerçek veriden oku
     with open(csv_file, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # Basit feature set: (geçmiş fail sayısı, rapor indexi)
             fail_val = int(row["test_fail"])
             report_idx = int(row["report_file"].split("_")[1].replace(".xml", "")) if "results_" in row["report_file"] else 0
             X.append([report_idx, fail_val])
@@ -47,7 +58,6 @@ def select_tests(tests_dir="tests", change_count=2, bonus=0.2):
     if not model:
         return []
 
-    # tests klasöründeki dosyaları topla
     test_files = list(Path(tests_dir).glob("test_*.py"))
     if not test_files:
         return []
@@ -56,12 +66,10 @@ def select_tests(tests_dir="tests", change_count=2, bonus=0.2):
 
     ranked = []
     for test_file in test_files:
-        # Basit feature: change_count + geçmiş failure sayısı
-        last_failures = y[-5:].count(1) if len(y) > 5 else sum(y)
+        last_failures = y[-5:].tolist().count(1) if len(y) > 5 else sum(y)
         features = np.array([[change_count, last_failures]])
         proba = model.predict_proba(features)[0][1]
 
-        # En güncel dosya ise bonus ekle
         if test_file.name == most_recent.name:
             proba = min(proba + bonus, 1.0)
 
@@ -83,7 +91,6 @@ if __name__ == "__main__":
 
     os.makedirs(REPORTS_DIR, exist_ok=True)
 
-    # Seçilen testleri çalıştır ve JUnit rapor üret
     for idx, (test_file, _) in enumerate(tests_with_scores, 1):
         report_file = f"{REPORTS_DIR}/results_{idx}.xml"
         subprocess.run([
