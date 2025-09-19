@@ -30,7 +30,7 @@ def parse_junit_xml(file_path):
 def collect_reports():
     """Tek results.xml dosyasını oku ve CSV’ye ekle"""
     if not os.path.exists(RESULTS_FILE):
-        print("⚠️ results.xml bulunamadı, önce testleri çalıştırın.")
+        print(" results.xml bulunamadı, önce testleri çalıştırın.")
         return
 
     fieldnames = ["timestamp", "report_file", "test_name", "test_fail"]
@@ -53,4 +53,4 @@ def collect_reports():
 if __name__ == "__main__":
     os.makedirs(REPORTS_DIR, exist_ok=True)
     collect_reports()
-    print(f"✅ Veriler {OUTPUT_CSV} dosyasına eklendi.")
+    print(f" Veriler {OUTPUT_CSV} dosyasına eklendi.")

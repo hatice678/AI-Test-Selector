@@ -13,7 +13,7 @@ RESULTS_FILE = os.path.join(REPORTS_DIR, "results.xml")
 def load_training_data(csv_file=CSV_FILE):
     """CSV’den training datasını oku"""
     if not os.path.exists(csv_file):
-        print(⚠️ Training datası yok, dummy modda çalıştırılıyor...")
+        print("⚠️ Training datası yok, dummy modda çalıştırılıyor...")
         os.makedirs(REPORTS_DIR, exist_ok=True)
         subprocess.run([
             sys.executable, "-m", "pytest", "-q",
