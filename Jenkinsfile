@@ -35,12 +35,13 @@ pipeline {
         }
 
         stage('Publish Reports') {
-            steps {
-                junit '**/reports/*.xml'
-                archiveArtifacts artifacts: 'reports/**', fingerprint: true
-                archiveArtifacts artifacts: 'training_data.csv', fingerprint: true
-            }
+              steps {
+        junit 'reports/results.xml'   // ✅ sadece tek dosya
+        archiveArtifacts artifacts: 'reports/**', fingerprint: true
+        archiveArtifacts artifacts: 'training_data.csv', fingerprint: true
+             }    
         }
+
     }
 
     post {
