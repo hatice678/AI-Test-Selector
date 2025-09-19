@@ -8,3 +8,9 @@ def test_payment_valid():
 def test_payment_invalid():
     with pytest.raises(ValueError):
         process_payment(0)
+
+
+def test_payment_negative_amount():
+    # ❌ kasıtlı hata
+    result = process_payment(-50)
+    assert result["status"] == "ok"   # bu aslında fail olmalı
