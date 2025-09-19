@@ -15,3 +15,7 @@ def test_create_user_invalid():
 
 def test_user_force_fail():
     assert False  # ❌ kasıtlı fail2333
+
+def test_user_wrong_name():
+    user = {"name": "hatice", "active": True}
+    assert user["name"] == "ayşe"  # ❌ yanlış değer, fail edecek
