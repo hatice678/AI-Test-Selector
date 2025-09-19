@@ -6,6 +6,7 @@ from datetime import datetime
 REPORTS_DIR = "reports"
 OUTPUT_CSV = "training_data.csv"
 
+
 def parse_junit_xml(file_path):
     """JUnit XML dosyasını parse et, test adı ve sonucunu döndür"""
     tree = ET.parse(file_path)
@@ -14,12 +15,22 @@ def parse_junit_xml(file_path):
 
     for testcase in root.iter("testcase"):
         test_name = testcase.get("classname", "") + "." + testcase.get("name", "")
-        status = 0  # passed
-        if testcase.find("failure") is not None or testcase.find("error") is not None:
-            status = 1  # failed
+        
+        # Varsayılan passed
+        status = 0  
+
+        # Eğer failure, error veya skipped varsa yakala
+        if testcase.find("failure") is not None:
+            status = 1
+        elif testcase.find("error") is not None:
+            status = 1
+        elif testcase.find("skipped") is not None:
+            status = 0  # skip = fail değil
+
         results.append((test_name, status))
 
     return results
+
 
 def collect_reports():
     """reports klasöründeki tüm XML dosyalarını gez, CSV’ye yaz"""
