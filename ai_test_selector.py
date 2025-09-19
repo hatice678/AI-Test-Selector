@@ -46,7 +46,6 @@ def train_model(X, y):
     return model
 
 def select_tests(tests_dir="tests", change_count=2, bonus=0.2):
-    """AI + bonus ile test sıralama"""
     X, y, test_names, fail_counts = load_training_data()
     if X is None:
         return []
@@ -63,20 +62,27 @@ def select_tests(tests_dir="tests", change_count=2, bonus=0.2):
 
     ranked = []
     for test_file in test_files:
-        test_name = test_file.stem.replace("/", ".")
-        fails = fail_counts.get(test_name, 0)
-        runs = X[:,0].max() if len(X) > 0 else 1  
+        # Dosya bazında fail toplamı
+        related_fails = sum(count for name, count in fail_counts.items() if test_file.stem in name)
 
-        features = np.array([[runs, fails]])
+        # Çalışma sayısı: ilgili testlerin toplam run sayısı
+        related_runs = sum(1 for name in test_names if test_file.stem in name)
+        if related_runs == 0:
+            related_runs = 1
+
+        fail_rate = related_fails / related_runs
+
+        features = np.array([[related_runs, fail_rate]])
         proba = model.predict_proba(features)[0][1]
 
         if test_file.name == most_recent.name:
             proba = min(proba + bonus, 1.0)
 
-        ranked.append((str(test_file), proba, fails))
+        ranked.append((str(test_file), proba, related_fails))
 
     ranked.sort(key=lambda x: x[1], reverse=True)
     return ranked
+
 
 if __name__ == "__main__":
     tests_with_scores = select_tests("tests")
