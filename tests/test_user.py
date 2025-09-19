@@ -12,3 +12,6 @@ def test_create_user_valid():
 def test_create_user_invalid():
     with pytest.raises(ValueError):
         create_user("")
+
+def test_force_fail():
+    assert False
