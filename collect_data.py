@@ -16,16 +16,15 @@ def parse_junit_xml(file_path):
     for testcase in root.iter("testcase"):
         test_name = testcase.get("classname", "") + "." + testcase.get("name", "")
         
-        # Varsayılan passed
+         # Varsayılan passed
         status = 0  
 
-        # Eğer failure, error veya skipped varsa yakala
-        if testcase.find("failure") is not None:
-            status = 1
-        elif testcase.find("error") is not None:
-            status = 1
-        elif testcase.find("skipped") is not None:
-            status = 0  # skip = fail değil
+        # Alt elemanları kontrol et
+        for child in testcase:
+            tag = child.tag.lower()
+            if "failure" in tag or "error" in tag:
+                status = 1
+                break
 
         results.append((test_name, status))
 
