@@ -11,7 +11,7 @@ REPORTS_DIR = "reports"
 RESULTS_FILE = os.path.join(REPORTS_DIR, "results.xml")
 
 def load_training_data(csv_file=CSV_FILE):
-    """CSV’den training datasını oku ve feature çıkar"""
+    """CSV’den training datasını oku ve feature çıkar (fail rate ile)"""
     if not os.path.exists(csv_file):
         print("[WARN] Training datası yok, dummy modda çalıştırılıyor...")
         return None, None, None, {}
@@ -24,12 +24,17 @@ def load_training_data(csv_file=CSV_FILE):
     X, y, test_names = [], [], []
     for test_name in df["test_name"].unique():
         fails = fail_counts.get(test_name, 0)
-        runs = run_counts.get(test_name, 0)
-        X.append([runs, fails])  
-        y.append(1 if fails > 0 else 0)  
+        runs = run_counts.get(test_name, 1)  # sıfıra bölünmesin diye 1 koyduk
+        fail_rate = fails / runs  # 🔑 fail oranı
+
+        # Features: [çalışma sayısı, fail oranı]
+        X.append([runs, fail_rate])
+        # Label: fail oranı %50’den fazlaysa riskli kabul
+        y.append(1 if fail_rate > 0.5 else 0)
         test_names.append(test_name)
 
     return np.array(X), np.array(y), test_names, fail_counts
+
 
 def train_model(X, y):
     """Logistic Regression modeli eğit"""
