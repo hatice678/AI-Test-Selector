@@ -17,28 +17,26 @@ def parse_junit_xml(file_path):
         for testcase in testsuite.iter("testcase"):
             test_name = testcase.get("classname", "") + "." + testcase.get("name", "")
             status = 0
-
-            # Altında failure veya error varsa bu test fail
             for child in testcase:
                 if child.tag.lower() in ["failure", "error"]:
                     status = 1
                     break
-
             results.append((test_name, status))
-
     return results
 
 def collect_reports():
-    """Sadece results.xml dosyasını oku ve CSV’ye yaz"""
+    """results.xml dosyasını oku ve CSV’ye ekle (append mode)"""
     if not os.path.exists(RESULTS_FILE):
         print("[WARN] results.xml bulunamadı, önce testleri çalıştırın.")
         return
 
     fieldnames = ["timestamp", "report_file", "test_name", "test_fail"]
+    file_exists = os.path.isfile(OUTPUT_CSV)
 
-    with open(OUTPUT_CSV, "w", newline="") as csvfile:  # 'w' → her build baştan yazar
+    with open(OUTPUT_CSV, "a", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+        if not file_exists:
+            writer.writeheader()
 
         test_results = parse_junit_xml(RESULTS_FILE)
         for test_name, status in test_results:
