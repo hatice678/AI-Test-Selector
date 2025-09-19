@@ -14,41 +14,31 @@ def parse_junit_xml(file_path):
     results = []
 
     for testsuite in root.iter("testsuite"):
-        # suite düzeyinde hata sayısı
-        suite_failed = int(testsuite.attrib.get("failures", "0")) > 0 or int(testsuite.attrib.get("errors", "0")) > 0
-
         for testcase in testsuite.iter("testcase"):
             test_name = testcase.get("classname", "") + "." + testcase.get("name", "")
             status = 0
 
-            # Alt tag’lerde failure veya error var mı?
+            # Altında failure veya error varsa bu test fail
             for child in testcase:
-                if "failure" in child.tag.lower() or "error" in child.tag.lower():
+                if child.tag.lower() in ["failure", "error"]:
                     status = 1
                     break
-
-            # Alt tag bulunmazsa ama suite fail olmuşsa, bu test de fail sayılabilir
-            if status == 0 and suite_failed:
-                if testcase.get("name", "").startswith("test_force_fail"):
-                    status = 1
 
             results.append((test_name, status))
 
     return results
 
 def collect_reports():
-    """Tek results.xml dosyasını oku ve CSV’ye ekle"""
+    """Sadece results.xml dosyasını oku ve CSV’ye yaz"""
     if not os.path.exists(RESULTS_FILE):
         print("[WARN] results.xml bulunamadı, önce testleri çalıştırın.")
         return
 
     fieldnames = ["timestamp", "report_file", "test_name", "test_fail"]
-    file_exists = os.path.isfile(OUTPUT_CSV)
 
-    with open(OUTPUT_CSV, "a", newline="") as csvfile:
+    with open(OUTPUT_CSV, "w", newline="") as csvfile:  # 'w' → her build baştan yazar
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        if not file_exists:
-            writer.writeheader()
+        writer.writeheader()
 
         test_results = parse_junit_xml(RESULTS_FILE)
         for test_name, status in test_results:
