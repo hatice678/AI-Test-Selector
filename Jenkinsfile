@@ -21,7 +21,7 @@ pipeline {
         stage('Run AI Test Selector') {
             steps {
                 sh '''
-                venv/bin/python ai_test_selector.py
+                venv/bin/python ai_test_selector.py || true
                 '''
             }
         }
@@ -29,7 +29,7 @@ pipeline {
         stage('Collect Training Data') {
             steps {
                 sh '''
-                venv/bin/python collect_data.py
+                venv/bin/python collect_data.py || true
                 '''
             }
         }
