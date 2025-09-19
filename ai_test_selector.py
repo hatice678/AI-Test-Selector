@@ -1,79 +1,93 @@
 import os
-import subprocess
 import sys
-from pathlib import Path
+import csv
+import subprocess
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from pathlib import Path
 
-# Eğitim datası (örnek)
-training_data = {
-    "tests/test_payment.py": {
-        "X": [[5, 10], [3, 8], [1, 6], [0, 3]],
-        "y": [1, 1, 1, 0],
-    },
-    "tests/test_user.py": {
-        "X": [[2, 2], [1, 1], [0, 0], [4, 3]],
-        "y": [1, 0, 0, 1],
-    },
-    "tests/test_recommender.py": {
-        "X": [[1, 1], [0, 0], [2, 1], [3, 2]],
-        "y": [1, 0, 1, 1],
-    },
-}
+CSV_FILE = "training_data.csv"
+REPORTS_DIR = "reports"
 
-# Her test için model eğit
-models = {}
-for test, data in training_data.items():
+def load_training_data(csv_file=CSV_FILE):
+    """CSV’den training datasını oku"""
+    X, y, test_names = [], [], []
+    if not os.path.exists(csv_file):
+        print("⚠️ Training datası bulunamadı, önce collect_data.py çalıştırın.")
+        return None, None, None
+
+    with open(csv_file, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Basit feature set: (geçmiş fail sayısı, rapor indexi)
+            fail_val = int(row["test_fail"])
+            report_idx = int(row["report_file"].split("_")[1].replace(".xml", "")) if "results_" in row["report_file"] else 0
+            X.append([report_idx, fail_val])
+            y.append(fail_val)
+            test_names.append(row["test_name"])
+
+    return np.array(X), np.array(y), test_names
+
+def train_model(X, y):
+    """Logistic Regression modeli eğit"""
+    if len(set(y)) < 2:
+        print("⚠️ Yeterli çeşitlilik yok, model eğitilemedi.")
+        return None
     model = LogisticRegression()
-    model.fit(data["X"], data["y"])
-    models[test] = model
+    model.fit(X, y)
+    return model
 
-def get_most_recent_test(tests_dir="tests"):
-    """tests klasöründe en son değiştirilmiş test dosyasını bul"""
+def select_tests(tests_dir="tests", change_count=2, bonus=0.2):
+    """AI + bonus ile test sıralama"""
+    X, y, test_names = load_training_data()
+    if X is None:
+        return []
+
+    model = train_model(X, y)
+    if not model:
+        return []
+
+    # tests klasöründeki dosyaları topla
     test_files = list(Path(tests_dir).glob("test_*.py"))
     if not test_files:
-        return None
+        return []
+
     most_recent = max(test_files, key=os.path.getmtime)
-    return str(most_recent)
 
-def select_tests_hybrid(tests_dir="tests", change_count=2, bonus=0.2):
-    most_recent = get_most_recent_test(tests_dir)
-    ai_scored = []
-
-    for test, model in models.items():
-        last_failure_count = training_data[test]["X"][-1][1]
-        features = np.array([[change_count, last_failure_count]])
+    ranked = []
+    for test_file in test_files:
+        # Basit feature: change_count + geçmiş failure sayısı
+        last_failures = y[-5:].count(1) if len(y) > 5 else sum(y)
+        features = np.array([[change_count, last_failures]])
         proba = model.predict_proba(features)[0][1]
 
-        # Eğer en güncel dosya buysa bonus ekle
-        if most_recent and test.endswith(os.path.basename(most_recent)):
+        # En güncel dosya ise bonus ekle
+        if test_file.name == most_recent.name:
             proba = min(proba + bonus, 1.0)
 
-        ai_scored.append((test, proba))
+        ranked.append((str(test_file), proba))
 
-    # Skora göre sırala
-    ai_scored.sort(key=lambda x: x[1], reverse=True)
-    return ai_scored
+    ranked.sort(key=lambda x: x[1], reverse=True)
+    return ranked
 
 if __name__ == "__main__":
-    tests_with_scores = select_tests_hybrid("tests")
+    tests_with_scores = select_tests("tests")
 
     if not tests_with_scores:
-        print("⚠️ Hiç test bulunamadı.")
+        print("⚠️ Hiç test bulunamadı veya model eğitilemedi.")
         sys.exit(1)
 
-    print("▶️ Çalıştırma Sırası (AI + Bonus Skor):")
+    print("▶️ Çalıştırma Sırası (Gerçek Data + AI + Bonus Skor):")
     for i, (test, score) in enumerate(tests_with_scores, 1):
         print(f"{i}) {test} (score={score:.2f})")
 
-    # rapor klasörü oluştur
-    os.makedirs("reports", exist_ok=True)
+    os.makedirs(REPORTS_DIR, exist_ok=True)
 
-    # seçilen testleri çalıştır ve raporları üret
+    # Seçilen testleri çalıştır ve JUnit rapor üret
     for idx, (test_file, _) in enumerate(tests_with_scores, 1):
-        report_name = f"reports/results_{idx}.xml"
+        report_file = f"{REPORTS_DIR}/results_{idx}.xml"
         subprocess.run([
             sys.executable, "-m", "pytest", "-q",
-            f"--junitxml={report_name}",
+            f"--junitxml={report_file}",
             test_file
         ])

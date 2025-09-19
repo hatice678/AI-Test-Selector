@@ -26,11 +26,29 @@ pipeline {
             }
         }
 
+        stage('Collect Training Data') {
+            steps {
+                sh '''
+                venv/bin/python collect_data.py
+                '''
+            }
+        }
+
         stage('Publish Reports') {
             steps {
                 junit '**/reports/*.xml'
                 archiveArtifacts artifacts: 'reports/**', fingerprint: true
+                archiveArtifacts artifacts: 'training_data.csv', fingerprint: true
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline tamamlandı ✅"
+        }
+        failure {
+            echo "Pipeline hata verdi ❌"
         }
     }
 }
