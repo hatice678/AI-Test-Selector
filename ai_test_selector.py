@@ -8,31 +8,26 @@ from pathlib import Path
 
 CSV_FILE = "training_data.csv"
 REPORTS_DIR = "reports"
+RESULTS_FILE = os.path.join(REPORTS_DIR, "results.xml")
 
 def load_training_data(csv_file=CSV_FILE):
     """CSV’den training datasını oku"""
-    X, y, test_names = [], [], []
-
-    # Eğer training_data.csv yoksa → dummy mod
-    if not os.path.exists(CSV_FILE):
-        print("⚠️ Training datası yok, dummy modda çalıştırılıyor...")
+    if not os.path.exists(csv_file):
+        print(⚠️ Training datası yok, dummy modda çalıştırılıyor...")
         os.makedirs(REPORTS_DIR, exist_ok=True)
-        for idx, test_file in enumerate(Path("tests").glob("test_*.py"), 1):
-            report_file = f"{REPORTS_DIR}/results_{idx}.xml"
-            subprocess.run([
-                sys.executable, "-m", "pytest", "-q",
-                f"--junitxml={report_file}",
-                str(test_file)
-            ])
-        # Dummy mod → raporlar üretildi, çıkış yap
+        subprocess.run([
+            sys.executable, "-m", "pytest", "-q",
+            f"--junitxml={RESULTS_FILE}",
+            "tests"
+        ])
         sys.exit(0)
 
-    # CSV varsa → gerçek veriden oku
+    X, y, test_names = [], [], []
     with open(csv_file, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             fail_val = int(row["test_fail"])
-            report_idx = int(row["report_file"].split("_")[1].replace(".xml", "")) if "results_" in row["report_file"] else 0
+            report_idx = 0  # basit feature
             X.append([report_idx, fail_val])
             y.append(fail_val)
             test_names.append(row["test_name"])
@@ -51,7 +46,7 @@ def train_model(X, y):
 def select_tests(tests_dir="tests", change_count=2, bonus=0.2):
     """AI + bonus ile test sıralama"""
     X, y, test_names = load_training_data()
-    if X is None:
+    if X is None or y is None or len(y) == 0:
         return []
 
     model = train_model(X, y)
@@ -91,10 +86,9 @@ if __name__ == "__main__":
 
     os.makedirs(REPORTS_DIR, exist_ok=True)
 
-    for idx, (test_file, _) in enumerate(tests_with_scores, 1):
-        report_file = f"{REPORTS_DIR}/results_{idx}.xml"
-        subprocess.run([
-            sys.executable, "-m", "pytest", "-q",
-            f"--junitxml={report_file}",
-            test_file
-        ])
+    # Tüm testleri tek XML dosyasına kaydet
+    subprocess.run([
+        sys.executable, "-m", "pytest", "-q",
+        f"--junitxml={RESULTS_FILE}",
+        "tests"
+    ])
